@@ -12,8 +12,12 @@ func trimExpander(kind Kind, prefix, longest bool) Expander {
 		if err != nil {
 			return "", err
 		}
-		if _, err := glob.Compile(pattern); err != nil {
-			return "", err
+		// Suffix matching reverses the pattern. Validate it before token
+		// reversal; prefix matching is validated by CompilePrefix below.
+		if !prefix {
+			if _, err := glob.Compile(pattern); err != nil {
+				return "", err
+			}
 		}
 
 		matchValue := value
