@@ -202,6 +202,11 @@ func TestPatternRemovalAndReplacement(t *testing.T) {
 			t.Errorf("Expand(%q) = (%q, %v), want %q", test.input, got, err, test.want)
 		}
 	}
+	for _, input := range []string{`${VALUE#[}`, `${VALUE%[}`} {
+		if _, err := Expand(input, matchEnv); !errors.Is(err, ErrBadPattern) {
+			t.Errorf("Expand(%q) error = %v, want ErrBadPattern", input, err)
+		}
+	}
 
 	empty := NewMapEnv(map[string]string{"EMPTY": ""})
 	if got, err := Expand(`${EMPTY//*/X}`, empty); err != nil || got != "X" {
