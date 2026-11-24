@@ -135,3 +135,53 @@ func TestCustomSyntaxCanComposeWithBash(t *testing.T) {
 		t.Fatalf("Expand() = %q, want %q", got, want)
 	}
 }
+
+func TestOverlappingSyntaxesRespectRegistrationOrder(t *testing.T) {
+	t.Parallel()
+
+	makeSyntax := func(kind Kind) Syntax {
+		return SyntaxFunc(func(input string, offset int, _ ParseOptions) (SyntaxMatch, bool, error) {
+			if !strings.HasPrefix(input[offset:], "[[") {
+				return SyntaxMatch{}, false, nil
+			}
+			relativeEnd := strings.Index(input[offset+2:], "]]")
+			if relativeEnd < 0 {
+				return SyntaxMatch{}, false, fmt.Errorf("unterminated token")
+			}
+			end := offset + 2 + relativeEnd + 2
+			expression := Expression{Kind: kind, Data: input[offset+2 : end-2]}
+			return SyntaxMatch{End: end, Expression: &expression}, true, nil
+		})
+	}
+	first := makeSyntax("priority.first")
+	second := makeSyntax("priority.second")
+	expanders := []Expander{
+		ExpanderFunc{ExpansionKind: "priority.first", Func: func(_ *Context, e Expression) (string, error) {
+			return "first:" + e.Data.(string), nil
+		}},
+		ExpanderFunc{ExpansionKind: "priority.second", Func: func(_ *Context, e Expression) (string, error) {
+			return "second:" + e.Data.(string), nil
+		}},
+	}
+
+	tests := []struct {
+		name     string
+		syntaxes []Syntax
+		want     string
+	}{
+		{name: "first has precedence", syntaxes: []Syntax{first, second}, want: "first:value"},
+		{name: "second has precedence when registered first", syntaxes: []Syntax{second, first}, want: "second:value"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			composer := MustNewWithSyntax(test.syntaxes, expanders...)
+			got, err := composer.Expand("[[value]]", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != test.want {
+				t.Fatalf("Expand() = %q, want %q", got, test.want)
+			}
+		})
+	}
+}
