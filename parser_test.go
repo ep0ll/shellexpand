@@ -2,6 +2,7 @@ package shellexpand
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -52,8 +53,12 @@ func TestParserClassifiesEveryExpressionPrecisely(t *testing.T) {
 				t.Fatalf("expected one expression, got %#v", parts)
 			}
 			got := *parts[0].expression
-			if got.Kind != test.kind || got.Name != test.name {
-				t.Errorf("got kind/name %q/%q, want %q/%q", got.Kind, got.Name, test.kind, test.name)
+			data, ok := got.Data.(BashExpressionData)
+			if !ok {
+				t.Fatalf("unexpected Bash expression payload type %T", got.Data)
+			}
+			if got.Kind != test.kind || data.Name != test.name {
+				t.Errorf("got kind/name %q/%q, want %q/%q", got.Kind, data.Name, test.kind, test.name)
 			}
 		})
 	}
@@ -136,8 +141,55 @@ func TestParseErrorIsTyped(t *testing.T) {
 
 func TestComposerRejectsTypedNilExpander(t *testing.T) {
 	t.Parallel()
-	var expander *builtinExpander
+	var expander *nilExpander
 	if _, err := New(expander); err == nil {
 		t.Fatal("expected typed nil expander to be rejected")
 	}
 }
+
+// parse is a test helper that exposes the token stream from the public syntax
+// contract without leaking parser internals into the public API.
+type parsedPart struct {
+	text       string
+	expression *Expression
+}
+
+func parse(input string, maxDepth int) ([]parsedPart, error) {
+	parts := make([]parsedPart, 0, 8)
+	var text strings.Builder
+	flush := func() {
+		if text.Len() > 0 {
+			parts = append(parts, parsedPart{text: text.String()})
+			text.Reset()
+		}
+	}
+	syntax := BashSyntax()
+	for offset := 0; offset < len(input); {
+		token, matched, err := syntax.Match(input, offset, ParseOptions{MaxDepth: maxDepth})
+		if err != nil {
+			return nil, err
+		}
+		if matched {
+			if token.Expression != nil {
+				flush()
+				parts = append(parts, parsedPart{expression: token.Expression})
+			} else if token.Text != "" {
+				text.WriteString(token.Text)
+			} else {
+				text.WriteString(input[offset:token.End])
+			}
+			offset = token.End
+			continue
+		}
+		text.WriteByte(input[offset])
+		offset++
+	}
+	flush()
+	return parts, nil
+}
+
+// nilExpander is a typed-nil implementation used to validate registration.
+type nilExpander struct{}
+
+func (*nilExpander) Kind() Kind                                  { return "nil" }
+func (*nilExpander) Expand(*Context, Expression) (string, error) { return "", nil }

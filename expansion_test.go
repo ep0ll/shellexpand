@@ -290,7 +290,13 @@ func TestCustomExpanderAndComposition(t *testing.T) {
 	t.Parallel()
 	custom := ExpanderFunc{
 		ExpansionKind: KindDollarVariable,
-		Func:          func(_ *Context, e Expression) (string, error) { return strings.ToUpper(e.Name), nil },
+		Func: func(_ *Context, e Expression) (string, error) {
+			data, ok := e.Data.(BashExpressionData)
+			if !ok {
+				return "", fmt.Errorf("unexpected Bash expression data %T", e.Data)
+			}
+			return strings.ToUpper(data.Name), nil
+		},
 	}
 	composer := MustNew(custom, BracedVariableExpander())
 	got, err := composer.Expand(`$name:${NAME}`, testEnv())
