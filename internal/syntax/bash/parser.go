@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/ep0ll/shellexpand/internal/engine"
 )
@@ -58,52 +57,6 @@ func (Syntax) Match(input string, offset int, options engine.ParseOptions) (engi
 		return engine.SyntaxMatch{End: end, Expression: &expression}, true, nil
 	}
 	return engine.SyntaxMatch{}, false, nil
-}
-
-// part is retained for parser-level tests and the Parse helper below.
-type part struct {
-	text       string
-	expression *Expression
-}
-
-// parse tokenizes an entire input using the Bash syntax implementation.
-func parse(input string, maxDepth int) ([]part, error) {
-	parts := make([]part, 0, 8)
-	var text strings.Builder
-	flush := func() {
-		if text.Len() != 0 {
-			parts = append(parts, part{text: text.String()})
-			text.Reset()
-		}
-	}
-	for offset := 0; offset < len(input); {
-		token, matched, err := (Syntax{}).Match(input, offset, engine.ParseOptions{MaxDepth: maxDepth})
-		if err != nil {
-			return nil, err
-		}
-		if matched {
-			if token.Expression == nil {
-				if token.Replace {
-					text.WriteString(token.Text)
-				} else {
-					text.WriteString(input[offset:token.End])
-				}
-			} else {
-				flush()
-				parts = append(parts, part{expression: token.Expression})
-			}
-			offset = token.End
-			continue
-		}
-		_, size := utf8.DecodeRuneInString(input[offset:])
-		if size == 0 {
-			size = 1
-		}
-		text.WriteString(input[offset : offset+size])
-		offset += size
-	}
-	flush()
-	return parts, nil
 }
 
 func findBraceEnd(input string, start, maxDepth int) (int, error) {
