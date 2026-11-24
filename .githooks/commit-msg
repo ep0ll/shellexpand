@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+message_file=$1
+subject=$(sed -n '1p' "$message_file")
+pattern='^(feat|fix|docs|refactor|test|build|ci|chore|perf|revert)(\([a-z0-9._/-]+\))?: .{1,72}$'
+
+if ! printf '%s\n' "$subject" | grep -Eq "$pattern"; then
+  echo "commit subject must follow Conventional Commits (type(scope): subject)" >&2
+  exit 1
+fi

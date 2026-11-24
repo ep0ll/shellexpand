@@ -1,0 +1,20 @@
+# Go build and test outputs
+*.test
+*.out
+coverage.out
+coverage.html
+*.prof
+
+# Local tooling
+bin/
+dist/
+tmp/
+.cache/
+.golangci-cache/
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
