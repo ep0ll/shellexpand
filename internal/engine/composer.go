@@ -36,6 +36,9 @@ func New(syntaxes []Syntax, expanders ...Expander) (*Composer, error) {
 		if kind == "" {
 			return nil, errors.New("shellexpand: expander must declare a non-empty kind")
 		}
+		if kind == KindUnknown {
+			return nil, errors.New("shellexpand: expander cannot register the reserved unknown kind")
+		}
 		if _, exists := registry[kind]; exists {
 			return nil, fmt.Errorf("shellexpand: duplicate expander for kind %q", kind)
 		}

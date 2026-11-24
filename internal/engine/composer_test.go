@@ -108,3 +108,15 @@ func TestNewRejectsDuplicateKinds(t *testing.T) {
 		t.Fatal("expected duplicate-kind error")
 	}
 }
+
+func TestNewRejectsReservedUnknownKind(t *testing.T) {
+	t.Parallel()
+
+	expander := ExpanderFunc{
+		ExpansionKind: KindUnknown,
+		Func:          func(*Context, Expression) (string, error) { return "unexpected", nil },
+	}
+	if _, err := New(nil, expander); err == nil {
+		t.Fatal("expected reserved-kind registration error")
+	}
+}
