@@ -1,7 +1,7 @@
 package shellexpand
 
 // DefaultExpanders returns a fresh slice containing the built-in variable,
-// default, assignment, required, alternate, length, and substring expanders.
+// value-operator, length, substring, and pattern-removal expanders.
 func DefaultExpanders() []Expander {
 	return []Expander{
 		DollarVariableExpander(),
@@ -16,6 +16,10 @@ func DefaultExpanders() []Expander {
 		AlternateIfSetExpander(),
 		LengthExpander(),
 		SubstringExpander(),
+		RemoveShortestPrefixExpander(),
+		RemoveLongestPrefixExpander(),
+		RemoveShortestSuffixExpander(),
+		RemoveLongestSuffixExpander(),
 	}
 }
 
