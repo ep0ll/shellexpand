@@ -1,7 +1,7 @@
 package shellexpand
 
-// DefaultExpanders returns a fresh slice containing all currently implemented
-// built-in parameter-value expansion strategies.
+// DefaultExpanders returns a fresh slice containing every built-in expander.
+// Each entry handles exactly one Kind, so callers can select a subset safely.
 func DefaultExpanders() []Expander {
 	return []Expander{
 		DollarVariableExpander(),
@@ -28,9 +28,14 @@ func DefaultExpanders() []Expander {
 		UppercaseAllExpander(),
 		LowercaseFirstExpander(),
 		LowercaseAllExpander(),
+		IndirectVariableExpander(),
+		IndirectPrefixNamesStarExpander(),
+		IndirectPrefixNamesAtExpander(),
 	}
 }
 
+// DefaultComposer returns the shared immutable composer with all built-in
+// expanders registered.
 func DefaultComposer() *Composer { return defaultComposer }
 
 var defaultComposer = MustNew(DefaultExpanders()...)
