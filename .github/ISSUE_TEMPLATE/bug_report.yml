@@ -1,0 +1,31 @@
+name: Bug report
+description: Report unexpected expansion behavior.
+labels: [bug]
+body:
+  - type: textarea
+    id: input
+    attributes:
+      label: Input
+      description: Provide a minimal input string and syntax configuration.
+      placeholder: '${NAME:-fallback}'
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: List relevant variable names and whether each is unset, empty, or set.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual results
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Go and shellexpand versions
+    validations:
+      required: true

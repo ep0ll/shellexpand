@@ -1,0 +1,6 @@
+# Informational owner metadata for tooling that consumes Kubernetes-style OWNERS.
+approvers:
+  - ep0ll
+reviewers:
+  - ep0ll
+labels: []
