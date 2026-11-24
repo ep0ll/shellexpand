@@ -1,0 +1,15 @@
+.PHONY: test race vet fmt check
+
+test:
+	go test ./...
+
+race:
+	go test -race ./...
+
+vet:
+	go vet ./...
+
+fmt:
+	gofmt -w *.go
+
+check: fmt test race vet
